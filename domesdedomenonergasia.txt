@@ -1,0 +1,321 @@
+// domesdedomenonergasia1.cpp : This file contains the 'main' function. Program execution begins and ends there.
+//
+
+#include "pch.h"
+#include <iostream>
+
+using namespace std;
+
+struct horisontal {		//οριζοντιο struct
+	int colNum;
+	int data;
+	horisontal* nextCol;	//δεικτης στην επομενη στηλη
+};
+
+struct vertical {	//καθετο STRUCT  
+	int rowNum;
+	vertical* nextRow;	// δεικτης στη πρωτη γραμμη
+	horisontal* nextCol;  //δεικτης στη πρωτη γραμμη
+};
+
+class linkedList {
+public:
+	vertical *firstVertical, *lastVertical; //πρωτος και τελευταιος δεικτης 
+	int sizeHor, sizeVert;		//size variables
+	linkedList() {		//constructor
+		firstVertical = NULL;
+		lastVertical = NULL;
+		sizeHor = 0;
+		sizeVert = 0;
+	}
+	void getSizeHor(int size) {	//παιρνει το μεγεθος
+		this->sizeHor = size;
+	}
+	void sizeUpdate() {		//updating size
+		vertical *tempV = firstVertical;
+		horisontal *tempH = new horisontal;//αρχικοποιηση blank sliding
+		while (tempV != NULL) {
+			if (tempV->rowNum > sizeVert) { sizeVert = tempV->rowNum; }
+			tempH = tempV->nextCol;
+			while (tempH != NULL) {
+				if (tempH->colNum > sizeHor) { sizeHor = tempH->colNum; }//καθορισμος μεγεθους
+				tempH = tempH->nextCol;
+			}
+			tempV = tempV->nextRow;
+		}
+	}
+	void display() {  //δειχνω φορματ
+		this->sizeUpdate();//apdating size
+		cout << "\n";
+		for (int i = 1; i <= sizeVert; i++) { //γραμμες
+			for (int j = 1; j <= sizeHor; j++) {	//στυλες
+				cout << this->getCellData(i, j) << " ";
+			}
+			cout << "\n";
+		}
+	}
+	void addBlankRow(int index) {//προσθετει blank γραμμη
+		vertical* temp = new vertical;
+		temp->rowNum = index;
+		temp->nextRow = NULL;
+		temp->nextCol = NULL;//SETUP
+		if (firstVertical == NULL) {//αν ειναι ο πρωτος κομβοs
+			firstVertical = temp;
+			lastVertical = temp;
+			temp = NULL;
+		}
+		else { // αν υπαρχουν προηγουμενοι κομβοι
+			lastVertical->nextRow = temp;
+			lastVertical = temp;
+		}
+		this->sizeUpdate();
+	}
+	void addRowElements(int row, int col, int data) {//προσθετει στοιχεια
+		vertical *line = firstVertical;
+		horisontal *elem = new horisontal;
+		elem->data = data;
+		elem->colNum = col;
+		elem->nextCol = NULL;//προετοιμασια και set-up κελιου
+		while (line->nextRow != NULL) {		//αναζητηση κελιου
+			if (line->rowNum == row) {
+				break;
+			}
+			line = line->nextRow;
+		}
+		if (line->nextCol == NULL) {
+			line->nextCol = elem;
+		}
+		else {
+			horisontal *temp = new horisontal;
+			temp = line->nextCol;
+
+			while (temp->nextCol != NULL) {
+				temp = temp->nextCol;
+			}
+			temp->nextCol = elem; //τοποθετει το κελι στη θεση του
+		}
+		this->sizeUpdate();		//update size
+	}
+	int getCellData(int row, int col) { //παιρνει τα στοιχεια του κελιου αν υπαρχουν αλλιως επιστρεφει 0
+		vertical *tempV = firstVertical;
+		horisontal *tempH = NULL;
+		bool exists = true;
+		int out = 0; //INITIALIZATION
+		while ((tempV != NULL) && (exists == true)) {//αναζητηση γραμμης αν υπαρχει
+			if (tempV->rowNum == row) {
+				tempH = tempV->nextCol;
+				break;
+			}
+			else if ((tempV->nextRow == NULL) && (tempV->rowNum != row)) {
+				exists = false;
+			}
+			tempV = tempV->nextRow;
+		}
+		if (tempH != NULL) {
+			while ((tempH != NULL) && (exists == true)) {// αν υπαρχει η τιμη τοτε βρισκουμε και τα δεδομενα αν αυτα υπαρχουν
+				if (tempH->colNum == col) {
+					out = tempH->data;
+					return out;
+				}
+				else if (tempH->nextCol == NULL) {
+					exists = false;
+				}
+				tempH = tempH->nextCol;
+			}
+		}
+		if (!exists) {
+			return 0;//αν η αναζητηση δε βρει κατι επιστρεφει 0
+		}
+		else {
+			return out;
+		}
+	}
+	void fill() {  //εισοδος τιμων απο το χρηστη
+		int line, col, data;
+		bool end = false;
+		cout << "Please insert the line and the column and the cell data. \n";
+		cout << "If you want to input a blank line, please declare it and then press 0 on the column index. \n";
+		cout << "If you want to go back, just press 0. To exit press a line index of 0. \n" << "\n \n";
+		cout << "Please input the maximum width: ";
+		cin >> sizeHor;
+		cout << "\n";
+		do
+		{
+			cout << "Please give me the line: ";
+			cin >> line;
+			if (line != 0) {
+				this->addBlankRow(line);
+				do {
+					cout << "Please give me the column: ";
+					cin >> col;
+					if (col != 0) {
+						cout << "Please give me the data: ";
+						cin >> data;
+						this->addRowElements(line, col, data);
+					}
+				} while (col != 0);
+			}
+			else {
+				end = true;
+				break;
+			}
+		} while (!end);
+		this->sizeUpdate();
+	}
+	void searchArray(int c) {
+		sizeUpdate();
+		int valueVar, pos1, pos2, pos3;
+		bool found = true;//initialization
+		for (int i = 1; i <= sizeVert; i++) {//προσπελαση πινακα
+			for (int j = 1; j <= sizeHor; j++) {
+				valueVar = getCellData(i, j);
+				if (valueVar != 0) {//test
+					//TEST 4 ARRAYS
+					//TEST 1 top-left
+					if (i - 1 > 0 && j - 1 > 0) {
+						pos1 = getCellData(i - 1, j - 1);
+						pos3 = getCellData(i, j - 1);
+						pos2 = getCellData(i - 1, j);
+						if (pos1 + pos2 + pos3 + valueVar >= c) {
+							cout << pos1 << " " << pos2 << "\n" << pos3 << " " << valueVar;
+							found = false;
+							i = sizeVert + 1;
+							break;
+						}
+					}
+					//test 2 pano deksia
+					if (i - 1 > 0 && j + 1 < sizeHor) {
+						pos1 = getCellData(i - 1, j);
+						pos2 = getCellData(i - 1, j + 1);
+						pos3 = getCellData(i, j + 1);
+						if (pos1 + pos2 + pos3 + valueVar >= c) {
+							cout << pos1 << " " << pos2 << "\n" << valueVar << " " << pos3;
+							found = false;
+							i = sizeVert + 1;
+							break;
+						}
+					}
+					//test 3 kato aristera
+					if (j - 1 > 0 && i + 1 < sizeVert) {
+						pos1 = getCellData(i, j - 1);
+						pos2 = getCellData(i + 1, j - 1);
+						pos3 = getCellData(i + 1, j);
+						if (pos1 + pos2 + pos3 + valueVar >= c) {
+
+							cout << pos1 << " " << valueVar << "\n" << pos2 << " " << pos3;
+							found = false;
+							i = sizeVert + 1;
+							break;
+						}
+					}
+					//test 4 kato deksia
+					if (i + 1 < sizeVert && j + 1 < sizeHor) {
+						pos1 = getCellData(i, j + 1);
+						pos2 = getCellData(i + 1, j);
+						pos3 = getCellData(i + 1, j + 1);
+						if (pos1 + pos2 + pos3 + valueVar >= c) {
+							cout << valueVar << " " << pos1 << "\n";
+							cout << pos2 << " " << pos3;
+							found = false;
+							i = sizeVert + 1;
+							break;
+						}
+					}
+				}
+			}
+		}
+		if (found == true) {
+			cout << "Nothing Found";
+		}
+	}
+};
+
+linkedList addition(linkedList& a, linkedList& b) {  //αυτη η συναρτηση λειτουργει αν εχουν το ιδιο μεγεθος
+	horisontal *aHor = new horisontal;
+	vertical *aVert = a.firstVertical;
+	horisontal *bHor = new horisontal;
+	vertical *bVert = b.firstVertical;
+	linkedList out;
+	a.sizeUpdate();
+	b.sizeUpdate();
+	int height = (a.sizeVert > b.sizeVert) ? a.sizeVert : b.sizeVert;
+	int length = (a.sizeHor > b.sizeHor) ? a.sizeHor : b.sizeHor;
+	out.getSizeHor(length);//καθοριζει το μεγεθος της εξοδου
+	for (int i = 1; i <= height; i++) {		//προσθετει τις blank γραμμες στη λιστα
+		out.addBlankRow(i);
+	}
+	while (aVert != NULL && bVert != NULL) {	//καθε φορα δημιουργει με προσθεση ενα στοιχειο
+		if (aVert->nextCol != NULL && bVert->nextCol != NULL) {
+			aHor = aVert->nextCol;
+			bHor = bVert->nextCol;
+			while (aHor != NULL && bHor != NULL) {
+				if (aHor->colNum < bHor->colNum) {
+					out.addRowElements(aVert->rowNum, aHor->colNum, aHor->data);
+					aHor = aHor->nextCol;
+				}
+				else if (aHor->colNum > bHor->colNum) {
+					out.addRowElements(bVert->rowNum, bHor->colNum, bHor->data);
+					bHor = bHor->nextCol;
+				}
+				else {
+					out.addRowElements(aVert->rowNum, aHor->colNum, (aHor->data + bHor->data));
+					aHor = aHor->nextCol;
+					bHor = bHor->nextCol;
+				}
+			}
+			if (bHor != NULL) {
+				out.addRowElements(bVert->rowNum, bHor->colNum, bHor->data);
+			}
+			else if (aHor != NULL) {
+				out.addRowElements(aVert->rowNum, aHor->colNum, aHor->data);
+			}
+		}
+		else if (aVert->nextCol != NULL && bVert->nextCol == NULL) {
+			aHor = aVert->nextCol;
+			while (aHor != NULL) {
+				out.addRowElements(aVert->rowNum, aHor->colNum, aHor->data);
+				aHor = aHor->nextCol;
+			}
+		}
+		else if (aVert->nextCol == NULL && bVert->nextCol != NULL) {
+			bHor = bVert->nextCol;
+			while (bHor != NULL) {
+				out.addRowElements(bVert->rowNum, bHor->colNum, bHor->data);
+				bHor = bHor->nextCol;
+			}
+		}
+		aVert = aVert->nextRow;
+		bVert = bVert->nextRow;
+	}
+	return out;	//επιστρεφει τη λιστα
+}
+
+int main() {	// εξοδος τιμων
+	linkedList it, it2;
+	int resp = 0;
+	cout << "\n \n";
+	cout << "Starting Initialization for the first LinkedList \n";
+	it.fill();
+	cout << "\n \n";
+	cout << "Starting Initialization for the first LinkedList \n";
+	it2.fill();
+
+	cout << "\n \n";
+	linkedList now;
+	now = addition(it, it2);
+	cout << "\n";
+	cout << "FIRST LINKEDLIST: \n";
+	it.display();
+	cout << "\n";
+	cout << "SECOND LINKEDLIST: \n";
+	it2.display();
+	cout << "\n";
+	cout << "SUM LINKEDLIST: \n";
+	now.display();
+	cout << "\n";
+	resp = 0;
+	cout << "Give me the n number to search for the 2x2 linkedList: ";
+	cin >> resp;
+	now.searchArray(resp);
+	cout << "\n \n";
+}
